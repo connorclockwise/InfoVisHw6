@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Test</title>
+        <script type="text/javascript" src="d3/d3.js"></script>
+
+        <style>
+            .chart rect {
+              background: steelblue;
+            }
+
+            .chart text {
+              fill: white;
+              font: 10px sans-serif;
+              text-anchor: middle;
+            }
+
+            .chart{
+              background: aqua;
+            }
+
+             text.xText{
+              fill: black;
+              font: 10px sans-serif;
+              text-anchor: middle;
+            }
+        </style>
+
+
+    </head>
+
+
+    <body>
+
+        <p>I hope you see this on your webpage!</p>
+        <svg id="idChart" class="chart"></svg>
+        <script type="text/javascript"> //src = d3/d3.js?
+
+            //Setting the size of our canvas
+            var width=780;
+            var height=460;
+
+            ///Setting our x and y axes
+            var x = d3.scale.ordinal().rangeRoundBands([0,width], 0.1);
+            var y = d3.scale.linear().range([height, 0])
+
+            //Creating our chart and grabbing attributes from ".chart" in header
+            var chart = d3.select("#idChart")
+            .attr("width", width)
+            .attr("height", height);
+
+            //Pulling data from .json file 
+            d3.json("State-Example.json", function(error, data){
+              console.log(data);
+
+              x.domain(data.map(function(d){ return d.state;}));
+              y.domain([0, d3.max(data, function(d) {return d.value;})])
+
+              var bar = chart.selectAll("g")
+              .data(data)
+              .enter()
+              .append("g")
+              .attr("transform", function(d) { return "translate(" + x(d.state) + ",0)";});
+
+              bar.append("rect")
+              .attr("y", function(d) {y(d.value);})
+              .attr("height", function(d) {return height - y(d.value);})
+              .attr("width", x.rangeBand())
+              .style("fill", function(d){return "black";});
+            })
+
+                //Set our scale domains
+
+
+                
+
+                //Grabbing data and binding it to the bars
+                
+
+
+
+                //Logging data to the console so we can make sure the data is bound
+                
+
+
+                //Generating rectangle SVG elements for our data
+                
+
+
+
+                //Adding y labels to our bars
+                
+
+
+
+                //Adding x labels to our bars
+                
+
+
+            
+
+        </script>
+    </body>
+</html>

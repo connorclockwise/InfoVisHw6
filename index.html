@@ -6,99 +6,128 @@
         <meta charset="utf-8">
         <title>D3 Test</title>
         <script type="text/javascript" src="d3/d3.js"></script>
-
-        <style>
-            .chart rect {
-              background: steelblue;
-            }
-
-            .chart text {
-              fill: white;
-              font: 10px sans-serif;
-              text-anchor: middle;
-            }
-
-            .chart{
-              background: aqua;
-            }
-
-             text.xText{
-              fill: black;
-              font: 10px sans-serif;
-              text-anchor: middle;
-            }
-        </style>
-
-
     </head>
 
 
     <body>
-
-        <p>I hope you see this on your webpage!</p>
-        <svg id="idChart" class="chart"></svg>
+        <svg class="chart">
+          <g class="grid"  width="1800" height="600">
+        </svg>
         <script type="text/javascript"> //src = d3/d3.js?
-
+            //##############    1    ####################
             //Setting the size of our canvas
-            var width=780;
-            var height=460;
-
-            ///Setting our x and y axes
-            var x = d3.scale.ordinal().rangeRoundBands([0,width], 0.1);
-            var y = d3.scale.linear().range([height, 0])
+            var width = 2100; 
+            var height = 700; 
 
             //Creating our chart and grabbing attributes from ".chart" in header
-            var chart = d3.select("#idChart")
-            .attr("width", width)
-            .attr("height", height);
+            var chart = d3.select(".chart")
+                .attr("width", width)
+                .attr("height", height);
 
-            //Pulling data from .json file 
-            d3.json("State-Example.json", function(error, data){
-              console.log(data);
+            var grid = d3.select(".grid")
+                .attr("width", chart.attr("width") - 400)
+                .attr("height", chart.attr("height") - 100);
 
-              x.domain(data.map(function(d){ return d.state;}));
-              y.domain([0, d3.max(data, function(d) {return d.value;})])
+            var x;
+            var y;
 
-              var bar = chart.selectAll("g")
-              .data(data)
-              .enter()
-              .append("g")
-              .attr("transform", function(d) { return "translate(" + x(d.state) + ",0)";});
+            //##############    2    ####################
+            //Pulling data from .csv file 
+            d3.csv("Movies.csv", function(error, data){
+                // dates = data.map(function(d) { return yearFormat.parse(d["Release Year"]); }).sort(d3.ascending);
+                // console.log(dates.toString());
+                xDomain = d3.extent(data, function(d) { return +d["Release Year"];});
+                xDomain[0] -= 1;
+                xDomain[1] += 1;
+                x = d3.scale.linear()
+                            .domain(xDomain)
+                            .range([0, chart.attr("width") - 100]);
+                y = d3.scale.linear()
+                            .domain(d3.extent(data, function(d) { return +d["Production Budget $"]; }))
+                            .range([chart.attr("height") - 100, 0]);
 
-              bar.append("rect")
-              .attr("y", function(d) {y(d.value);})
-              .attr("height", function(d) {return height - y(d.value);})
-              .attr("width", x.rangeBand())
-              .style("fill", function(d){return "black";});
-            })
+                // y.domain([0, 1000000000]);
+                var bar = chart.selectAll("grid")
+                  .data(data)
+                  .enter()
+                  .append("g");
 
-                //Set our scale domains
-
-
-                
-
-                //Grabbing data and binding it to the bars
-                
-
-
-
-                //Logging data to the console so we can make sure the data is bound
-                
+                profitMargin = d3.extent(data, function(d){ return +d["Profit $"] });
 
 
-                //Generating rectangle SVG elements for our data
-                
+                bar.append("circle")
+                  .attr("cx", function(d) { return (x(+d["Release Year"]) + 50); })
+                  .attr("cy", function(d) { return (y(+d["Production Budget $"]) + 50); } ) 
+                  .attr("r", function(d){
+                    return ( 1 + (+d["Profit $"]/(profitMargin[1] - profitMargin[0])) * 25);} )
+                  .style("fill", function(d){
+                      return "rgb(" + parseInt(255 * ((1 - (+d["IMDB Rating"]) / 10))) + "," + parseInt(255 * (+d["IMDB Rating"] / 10)) + "," + 0 + ")";
+                  });
 
-
-
+                //##############    5    ####################
                 //Adding y labels to our bars
-                
+                bar.append("text")
+                  .attr("transform", function(d){
+                    return "translate(" + (x(+d["Release Year"])) + ","
+                                         + (y(+d["Production Budget $"]) + 50) 
+                                         + ")rotate(-45)";})
+                  .attr("class", "circleLabel")
+                  .attr("font-size", "70%")
+                  .attr("width", "5")
+                  .text(function(d) { return d["Movie"]; });
 
+                // //Adding x labels to our bars
+                // bar.append("text")
+                //   .attr("class", "xText")
+                //   .attr("x", x.rangeBand() / 2)
+                //   .attr("y", height - y_translate + 5)
+                //   .attr("dy", ".75em")
+                //   .text(function(d) { return d.state; });
 
+                var xAxis = d3.svg.axis()
+                                .scale(x)
+                                .orient("bottom")
+                                .tickFormat(d3.format('04d'));
 
-                //Adding x labels to our bars
-                
+                var yAxis = d3.svg.axis()
+                               .scale(y)
+                               .orient("right")
+                               .tickFormat(d3.format('$'));
 
+                var xAxisGroup = grid.append("g")
+                                    .call(xAxis)
+                                    .attr("class", "axis") 
+                                    .attr("transform", "translate( " + 50  + ", " + (parseInt(grid.attr("height")) + 50)+")");
+                                  
+                var chartLabel = grid.append("text")
+                                    .attr("x", (grid.attr("width"))/2 )
+                                    .attr("y", 35 )
+                                    .attr("dx", 100)
+                                    .attr("font-size", 50 )
+                                    .style("text-anchor", "middle")
+                                    .text("Movies");
+
+                var xAxisLabel = xAxisGroup.append("text")
+                                    .attr("x", (grid.attr("width"))/2 )
+                                    .attr("y", 50 )
+                                    .attr("dx", 100)
+                                    .attr("font-size", 18 )
+                                    .style("text-anchor", "middle")
+                                    .text("Year Released");
+
+                var yAxisGroup = grid.append("g")
+                                    .call(yAxis)
+                                    .attr("class", "axis") 
+                                    .attr("transform", "translate( " + 50  + ", " + 50+ ")");
+
+                var yAxisLabel = yAxisGroup.append("text")
+                                    .attr("x", -25 )
+                                    .attr("y", (grid.attr("height"))/2 )
+                                    .attr("transform", "rotate(0 0 90)")
+                                    .style("text-anchor", "middle")
+                                    .text("Budget");
+
+            });
 
             
 
